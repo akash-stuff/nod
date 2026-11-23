@@ -1945,7 +1945,10 @@ test(
             mode = 'body';
             const owner = new AbortController();
             const started = arrival();
-            const pending = execute({ timeout: 300, signal: owner.signal });
+            const pending = execute({
+              timeout: stopped === 'abort' ? 1000 : 300,
+              signal: owner.signal,
+            });
             const headers = pending.asResponse();
             headers.catch(() => {});
             try {
@@ -1981,7 +1984,10 @@ test(
         mode = 'headers';
         const owner = new AbortController();
         const started = arrival();
-        const pending = execute({ timeout: 300, signal: owner.signal });
+        const pending = execute({
+          timeout: stopped === 'abort' ? 1000 : 300,
+          signal: owner.signal,
+        });
         const rawFailure = pending.asResponse().then(
           () => assert.fail('The response headers were not held.'),
           (error: unknown) => error,

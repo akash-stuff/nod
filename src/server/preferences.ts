@@ -38,19 +38,19 @@ export const defaultPreferences: Preferences = {
   localFilesEnabled: false,
 };
 type QuietHours = Pick<Preferences, 'quietHoursEnabled' | 'quietStart' | 'quietEnd' | 'timeZone'>;
-const clocks = new Map<string, Intl.DateTimeFormat>();
+let lastClock: { timeZone: string; format: Intl.DateTimeFormat } | undefined;
 function clock(timeZone: string) {
-  let format = clocks.get(timeZone);
-  if (!format) {
-    format = new Intl.DateTimeFormat('en-GB', {
+  if (lastClock?.timeZone !== timeZone)
+    lastClock = {
       timeZone,
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    });
-    clocks.set(timeZone, format);
-  }
-  return format;
+      format: new Intl.DateTimeFormat('en-GB', {
+        timeZone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      }),
+    };
+  return lastClock.format;
 }
 export function isQuietTime(preferences: QuietHours, now = new Date()) {
   if (!preferences.quietHoursEnabled) return false;
