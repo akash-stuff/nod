@@ -523,18 +523,9 @@ export function createAgentBrowserComputer(options: {
     options.signal?.throwIfAborted();
     const action = String(request.action);
     if (state.socket) {
-      const diagBegan = performance.now();
       const result = await drainInterruptedCommand(state, action, () =>
         requestDaemon(state.socket!, request, options.signal, options.timeoutMs, options.maxBytes),
-      ).finally(() => {
-        if (performance.now() - diagBegan > 2500)
-          console.error(
-            'DIAG SLOWCMD',
-            Math.round(performance.now() - diagBegan),
-            action,
-            JSON.stringify(Object.keys(request)),
-          );
-      });
+      );
       if (action === 'close') {
         const started = Date.now();
         while (await stat(state.socket!).catch(() => null)) {
@@ -670,7 +661,6 @@ export function createAgentBrowserComputer(options: {
       return await command(state, request, options);
     } catch (error) {
       if (!(error instanceof DaemonCommandError)) throw error;
-      console.error('DIAG OBSFAIL', String(request.action), String(error.detail).slice(0, 200));
       const scope = request.action === 'snapshot' ? request.selector : undefined;
       if (typeof scope === 'string') {
         if (error.detail === `Selector '${scope}' did not match any element`)

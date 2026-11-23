@@ -122,14 +122,11 @@ jobs:
             sudo apt-get update -qq
             sudo apt-get install --yes --no-install-recommends "${missing[@]}"
           fi
-          chromium --version || true
-          ls -l "$(command -v chromium)" || true
-          chrome="$(command -v google-chrome || command -v google-chrome-stable || true)"
-          if [[ -n "$chrome" ]]; then
+          chrome="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)"
+          if [[ "$chrome" != /usr/bin/chromium ]]; then
             sudo ln -sf "$chrome" /usr/bin/chromium
           fi
           sudo ln -s "$PWD" /app
-          /usr/bin/chromium --version || true
           mkdir -p "$RUNNER_TEMP/integration-timings"
       - name: Install desktop tooling without downloading Electron
         if: steps.scope.outputs.desktop == 'true'
