@@ -1,0 +1,87 @@
+# Render Infrastructure as Code configuration for Nod
+# This deploys the Nod server with managed PostgreSQL
+# 
+# IMPORTANT: Browser and workspace features require Docker-in-Docker
+# which Render doesn't support. These features will be disabled.
+#
+# To deploy:
+# 1. Push this repository to GitHub
+# 2. Connect the repository to Render
+# 3. Render will automatically detect render.yaml and create services
+# 4. Set the required environment variables in Render dashboard
+
+services:
+  # Main Nod Server
+  - type: web
+    name: nod-server
+    runtime: docker
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    plan: standard  # Minimum: standard (2 CPU, 4GB RAM) - browser/workspace need more
+    region: oregon  # Change to your preferred region
+    healthCheckPath: /health
+    envVars:
+      # Required - Generate a secure random token for authentication
+      - key: NOD_AUTH_TOKEN
+        generateValue: true
+      # Required - Generate a secure vault key for encryption
+      - key: NOD_VAULT_KEY
+        generateValue: true
+      # Required - Database URL (auto-populated from managed PostgreSQL)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nod-db
+          property: connectionString
+      # Server configuration
+      - key: NOD_HOST
+        value: "0.0.0.0"
+      - key: PORT
+        value: "4310"
+      - key: NOD_DATA_ROOT
+        value: "/var/lib/nod"
+      - key: NOD_ENVIRONMENT
+        value: "production"
+      # Public URL - UPDATE THIS after deployment with your Render URL
+      # Format: https://your-service-name.onrender.com
+      - key: NOD_PUBLIC_URL
+        value: "https://nod-server.onrender.com"
+      # Disable features that require Docker-in-Docker
+      - key: NOD_DESKTOP
+        value: "false"
+      # Model provider configuration - SET AT LEAST ONE
+      - key: LLM_PROVIDER
+        value: "openai"
+      # - key: OPENAI_API_KEY
+      #   sync: false  # Set in Render dashboard
+      # Optional: Other model providers (uncomment and set in dashboard)
+      # - key: ANTHROPIC_API_KEY
+      #   sync: false
+      # - key: GEMINI_API_KEY
+      #   sync: false
+      # Optional: Composio for integrations
+      # - key: NOD_COMPOSIO_PROXY_URL
+      #   value: "https://composio.n8n.cloud"
+      # Optional: Analytics
+      # - key: NOD_ANALYTICS_ENABLED
+      #   value: "true"
+      # - key: NOD_ANALYTICS_ID
+      #   generateValue: true
+      # Optional: Telegram/WhatsApp (requires public HTTPS)
+      # - key: TELEGRAM_ENABLED
+      #   value: "false"
+      # - key: WHATSAPP_ENABLED
+      #   value: "false"
+    # Disk for persistent data (workspaces, uploads, etc.)
+    disk:
+      name: nod-data
+      mountPath: /var/lib/nod
+      sizeGB: 10
+
+  # Managed PostgreSQL Database
+databases:
+  - name: nod-db
+    databaseName: nod
+    user: nod
+    plan: starter  # Minimum: starter (1GB RAM, 10GB storage)
+    region: oregon  # Must match service region
+    ipAllowList: []  # Empty = allow all (configure as needed)

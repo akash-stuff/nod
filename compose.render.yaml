@@ -1,0 +1,58 @@
+# Docker Compose for local testing of Render deployment
+# This mimics the Render environment (without Docker-in-Docker)
+# Browser and workspace features are DISABLED
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: nod
+      POSTGRES_PASSWORD: ${NOD_POSTGRES_PASSWORD:-nod}
+      POSTGRES_DB: nod
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nod -d nod']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  nod-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.render
+    image: nod-server:render
+    environment:
+      NODE_ENV: production
+      NOD_ENVIRONMENT: production
+      NOD_HOST: 0.0.0.0
+      PORT: ${PORT:-4310}
+      NOD_DATA_ROOT: /var/lib/nod
+      NOD_PUBLIC_URL: ${NOD_PUBLIC_URL:-http://localhost:4310}
+      NOD_AUTH_TOKEN: ${NOD_AUTH_TOKEN:-changeme}
+      NOD_VAULT_KEY: ${NOD_VAULT_KEY:-changeme}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://nod:nod@postgres:5432/nod}
+      NOD_DESKTOP: "false"
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    ports:
+      - '${PORT:-4310}:4310'
+    volumes:
+      - nod-data:/var/lib/nod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'node', '/app/healthcheck.mjs']
+      interval: 15s
+      timeout: 6s
+      retries: 10
+      start_period: 60s
+
+volumes:
+  postgres-data:
+  nod-data:

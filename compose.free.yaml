@@ -1,0 +1,62 @@
+# Docker Compose for local testing (mimics Render free tier constraints)
+# Run: docker compose -f compose.free.yaml up
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: nod
+      POSTGRES_PASSWORD: nod
+      POSTGRES_DB: nod
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nod -d nod']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    # Memory limit to simulate free tier constraints
+    mem_limit: 256m
+    cpus: '0.5'
+
+  nod-free:
+    build:
+      context: .
+      dockerfile: Dockerfile.render.free
+    image: nod-free:local
+    environment:
+      NODE_ENV: production
+      NOD_ENVIRONMENT: production
+      NOD_HOST: 0.0.0.0
+      PORT: 4310
+      NOD_DATA_ROOT: /var/lib/nod
+      NOD_PUBLIC_URL: http://localhost:4310
+      NOD_AUTH_TOKEN: test-token-change-me
+      NOD_VAULT_KEY: test-vault-key-change-me
+      DATABASE_URL: postgresql://nod:nod@postgres:5432/nod
+      NOD_DESKTOP: "false"
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      NODE_OPTIONS: --max-old-space-size=384
+    ports:
+      - '4310:4310'
+    # Ephemeral storage (no volume mount = data lost on restart)
+    # Simulates Render free tier no-persistent-disk
+    mem_limit: 512m
+    cpus: '0.5'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'node', '/app/healthcheck.mjs']
+      interval: 15s
+      timeout: 6s
+      retries: 10
+      start_period: 60s
+
+volumes:
+  postgres-data:

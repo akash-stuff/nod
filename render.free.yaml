@@ -1,0 +1,62 @@
+# Render FREE TIER deployment for Nod
+# 
+# LIMITATIONS:
+# - Free Web Service: 512MB RAM, shared CPU, spins down after 15min inactivity
+# - Free PostgreSQL: 90 days ONLY, then auto-deletes (no free persistent DB)
+# - No persistent disks (data lost on restart/deploy)
+# - No custom domains
+# - Build timeout: 15 minutes
+#
+# This is for TESTING ONLY. For production, use paid plans or VPS.
+
+services:
+  - type: web
+    name: nod-free
+    runtime: docker
+    dockerfilePath: ./Dockerfile.render.free
+    dockerContext: .
+    plan: free  # 512MB RAM, shared CPU
+    region: oregon
+    healthCheckPath: /health
+    # Free tier spins down after 15min inactivity
+    # First request after spin-down takes 30-60s to wake up
+    envVars:
+      # Required - Generate secure values
+      - key: NOD_AUTH_TOKEN
+        generateValue: true
+      - key: NOD_VAULT_KEY
+        generateValue: true
+      # Database - from free PostgreSQL (90-day trial)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nod-db-free
+          property: connectionString
+      # Server config
+      - key: NOD_HOST
+        value: "0.0.0.0"
+      - key: PORT
+        value: "4310"
+      - key: NOD_DATA_ROOT
+        value: "/var/lib/nod"
+      - key: NOD_ENVIRONMENT
+        value: "production"
+      # Public URL - UPDATE AFTER DEPLOY
+      - key: NOD_PUBLIC_URL
+        value: "https://nod-free.onrender.com"
+      # Disable desktop mode
+      - key: NOD_DESKTOP
+        value: "false"
+      # Model provider - SET AT LEAST ONE
+      - key: LLM_PROVIDER
+        value: "openai"
+      # Memory optimization for 512MB limit
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=384"
+
+databases:
+  - name: nod-db-free
+    databaseName: nod
+    user: nod
+    plan: free  # 90-day trial only!
+    region: oregon
+    ipAllowList: []
