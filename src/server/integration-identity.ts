@@ -40,5 +40,9 @@ export function createIntegrationIdentityCheckpoint(
       if (result.rowCount !== 1)
         throw new Error('Nod’s saved app identity changed. Restore its app data to reconnect.');
     },
+    async reset() {
+      await ready();
+      await pool.query('DELETE FROM integration_identities WHERE owner_id=$1', [ownerId]);
+    },
   };
 }

@@ -5,7 +5,7 @@
 | Resource | Free Tier Limit | Impact on Nod |
 |----------|-----------------|---------------|
 | **RAM** | 512 MB | Very tight - Node.js + PostgreSQL client may OOM |
-| **PostgreSQL** | 90 days only | **Database DELETED after 90 days** - no free persistent DB |
+| **PostgreSQL** | 30 days only | **Database DELETED after 30 days** - no free persistent DB |
 | **Persistent Disk** | ❌ Not available | All data lost on restart/deploy/spin-down |
 | **Spin-down** | 15 min inactivity | 30-60s cold start; wakes on first request |
 | **Build Time** | 15 minutes | May timeout on first build |
@@ -19,7 +19,7 @@
 
 ✅ Basic chat/assistant  
 ✅ Model connections (OpenAI, Anthropic, etc.)  
-✅ PostgreSQL (for 90 days)  
+✅ PostgreSQL (for 30 days)  
 ✅ File uploads (stored in ephemeral memory - lost on restart)  
 
 ❌ Browser automation (needs Docker-in-Docker)  
@@ -74,8 +74,8 @@ git push origin main
 
 ## Free Tier Gotchas
 
-### Database Expires in 90 Days
-- Free PostgreSQL is **trial only** - auto-deleted after 90 days
+### Database Expires in 30 Days
+- Free PostgreSQL is **trial only** - auto-deleted after 30 days
 - No way to extend on free tier
 - **Export your data** before expiry if needed
 

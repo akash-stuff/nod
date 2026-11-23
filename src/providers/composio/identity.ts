@@ -90,18 +90,28 @@ export async function loadIntegrationIdentity(options: {
   keyStore: CredentialKeyStore;
   checkpoint: IntegrationIdentityCheckpoint;
 }) {
-  const expected = await options.checkpoint.read();
+  let expected = await options.checkpoint.read();
   const name = createHash('sha256').update(options.ownerId).digest('hex');
   if (expected !== undefined) {
     if (!/^[A-Za-z0-9_-]{43}$/.test(expected))
       throw new Error('Nod’s saved app identity is invalid. Restore its app data to reconnect.');
+    let present = true;
     for (const extension of ['encrypted', 'public'])
       if (
         !(await readProtected(
           join(options.dataRoot, 'integration-identity', `${name}.${extension}`),
         ))
       )
+        present = false;
+    if (!present) {
+      // Ephemeral deployments (no persistent disk) lose the identity files on
+      // every container restart. Regenerate a fresh identity instead of
+      // refusing to start; only enabled when NOD_EPHEMERAL_DATA=true.
+      if (process.env.NOD_EPHEMERAL_DATA !== 'true' || !options.checkpoint.reset)
         throw new Error('Nod’s saved app identity is missing. Restore its app data to reconnect.');
+      await options.checkpoint.reset();
+      expected = undefined;
+    }
   }
   if (!options.keyStore.configured)
     throw new Error('Unlock or configure Nod’s key store before connecting apps.');
