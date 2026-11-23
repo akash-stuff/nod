@@ -127,6 +127,7 @@ jobs:
             sudo ln -s "$chrome" /usr/bin/chromium
           fi
           sudo ln -s "$PWD" /app
+          chromium --version || true
           mkdir -p "$RUNNER_TEMP/integration-timings"
       - name: Install desktop tooling without downloading Electron
         if: steps.scope.outputs.desktop == 'true'

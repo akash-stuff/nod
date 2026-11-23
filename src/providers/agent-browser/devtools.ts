@@ -166,6 +166,13 @@ export async function openDevtools(
       const id = ++next;
       const timer = setTimeout(() => {
         pending.delete(id);
+        console.error(
+          'DIAG CDPTIMEOUT',
+          method,
+          JSON.stringify(Object.keys(params)),
+          Boolean(sessionId),
+          cleanup,
+        );
         reject(new Error('The browser inspector did not answer.'));
       }, 10_000);
       pending.set(id, {
