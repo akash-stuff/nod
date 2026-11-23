@@ -3645,6 +3645,7 @@ describe('model connections', { skip: !process.env.TEST_DATABASE_URL }, () => {
       connectionString: process.env.TEST_DATABASE_URL,
       options: `-c search_path=${schema}`,
       max: 2,
+      idleTimeoutMillis: 0,
     });
     const key = randomBytes(32);
     const keyStore = { id: 'fixture', configured: true, getKey: async () => key };

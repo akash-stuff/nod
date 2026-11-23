@@ -90,7 +90,9 @@ test(
           async () =>
             (
               await nod.query(
-                "SELECT 1 FROM tasks t JOIN turns u ON u.task_id=t.id WHERE t.title='hold: draft the newsletter' AND u.status='running'",
+                `SELECT 1 FROM tasks t JOIN turns u ON u.task_id=t.id
+                 WHERE t.title='hold: draft the newsletter' AND u.status='running'
+                   AND NOT EXISTS (SELECT 1 FROM turns o WHERE o.id<>u.id AND o.status IN ('queued','running'))`,
               )
             ).length > 0,
         );

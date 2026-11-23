@@ -64,9 +64,11 @@ jobs:
           POSTGRES_USER: nod
           POSTGRES_PASSWORD: nod-ci
           POSTGRES_DB: nod_ci
+          POSTGRES_INITDB_ARGS: --set fsync=off --set synchronous_commit=off --set full_page_writes=off --set max_connections=300
         ports:
           - 5432:5432
         options: >-
+          --tmpfs /var/lib/postgresql/data
           --health-cmd "pg_isready -h 127.0.0.1 -U nod -d nod_ci"
           --health-interval 1s
           --health-timeout 5s
@@ -113,7 +115,7 @@ jobs:
         shell: bash
         run: |
           missing=()
-          for program in Xvfb xauth xdotool ffmpeg; do
+          for program in Xvfb xauth; do
             command -v "$program" >/dev/null || missing+=("${program,,}")
           done
           if (( ${#missing[@]} )); then
